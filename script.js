@@ -154,4 +154,88 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.head.appendChild(style);
 
+  // --- Electric particles (canvas) ---
+  const canvas = document.getElementById('electricParticles');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let w, h;
+
+    function resize() {
+      const hero = canvas.parentElement.parentElement;
+      w = canvas.width = hero.offsetWidth;
+      h = canvas.height = hero.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 0.5;
+        this.opacity = Math.random() * 0.5 + 0.1;
+        // Mix of blue (#3B82F6) and orange (#F97316) particles
+        this.isOrange = Math.random() > 0.7;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > w || this.y < 0 || this.y > h) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        const color = this.isOrange ? `rgba(249,115,22,${this.opacity})` : `rgba(59,130,246,${this.opacity})`;
+        ctx.fillStyle = color;
+        ctx.shadowBlur = this.isOrange ? 8 : 6;
+        ctx.shadowColor = this.isOrange ? 'rgba(249,115,22,0.3)' : 'rgba(59,130,246,0.3)';
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+    function drawLines() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            const op = (1 - dist / 120) * 0.12;
+            ctx.strokeStyle = particles[i].isOrange || particles[j].isOrange
+              ? `rgba(249,115,22,${op})`
+              : `rgba(59,130,246,${op})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, w, h);
+      ctx.shadowBlur = 0;
+      particles.forEach(p => { p.update(); p.draw(); });
+      drawLines();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // --- Staggered card animations ---
+  document.querySelectorAll('.services-grid .service-card').forEach((card, i) => {
+    card.style.transitionDelay = `${i * 80}ms`;
+  });
+  document.querySelectorAll('.testimonials-grid .testimonial-card').forEach((card, i) => {
+    card.style.transitionDelay = `${i * 100}ms`;
+  });
+
 });
