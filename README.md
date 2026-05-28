@@ -40,12 +40,32 @@ Each listing gets a 1–10 score, the **average of four attributes** (`src/scori
 
 Scores are **cached per listing**, so panning/zooming the map never recomputes.
 
-### Adding AI scoring later (optional)
+### AI-graded descriptions (optional)
 
-The description-quality attribute has a dormant **AI slot** (`src/scoring/aiScorer.ts`).
-To keep data usage minimal it's off by default. When you want AI-graded
-descriptions, implement the `AiScorer` interface (e.g. a Claude API call), set
-`activeAiScorer`, and results are cached + batched so token usage stays low.
+The **Description** attribute can be graded by Claude instead of the built-in
+heuristic. It's **off by default** so the beta spends zero tokens.
+
+To turn it on:
+
+```bash
+cp .env.example .env
+# edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+# restart: npm run dev
+```
+
+How it stays cheap:
+
+- Uses **Claude Haiku 4.5** (the cheapest model) via a server-side dev endpoint
+  (`vite-plugin-ai-score.ts`) — the key lives on the server and is **never sent
+  to the browser**.
+- Listings are **batched** into one request, the rubric system prompt is
+  **prompt-cached**, and every score is cached in `localStorage`, so each
+  listing is graded **at most once, ever** (survives restarts).
+- No key? The endpoint returns 503 and TiPi silently falls back to the
+  heuristic — nothing breaks.
+
+> Note: the endpoint runs in the Vite dev server. A production static deploy
+> would move the same logic into a serverless function (identical request shape).
 
 ## Tech
 
